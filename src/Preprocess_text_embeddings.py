@@ -1,69 +1,39 @@
 # For data preprocessing
 import pandas as pd
 import numpy as np
-from imblearn.over_sampling import SMOTE
-from collections import Counter
 
 # To get text embeddings with DistilBert
 import torch
 from torch import nn
 import torch.nn.functional as F
 import torch.optim as optim
-from transformers import pipeline
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 
-# For ml operations
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report
-from sklearn import preprocessing
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegressionCV, LogisticRegression
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import PredefinedSplit
-import sklearn
-
-# For data plotting
-import plotly.express as px
-import plotly
-import tqdm
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 import os # to manipulate paths to files
-import time # to check time
 import pickle # to upload and download files
 import copy # to copy variables
 
+# Libraries for parsing
 import argparse
 import configparser
+
+# To log operations
 from logger import Logger
+
+from utils import create_config_dict
 
 parser = argparse.ArgumentParser(description="Predictor")
 
-parser.add_argument("--review_folder", "-rf",
+parser.add_argument("--category", "-cat",
                     type=str,
-                    help="Path to the folder with reviews",
-                    default="data/full_rt_20_mc_reviews")
-
-parser.add_argument("--csv_path", "-cp",
-                    type=str,
-                    help="Path to the csv dataframe",
-                    default="data/dataframes/oscardata_bestpicture.csv")
-
-parser.add_argument("--save_path", "-sp",
-                    type=str,
-                    help="Path to save embeddings",
-                    default="embeddings/bestpicture/full_data_dict.pkl") 
+                    help="Choose the category to preporcess text for",
+                    default="bestpicture",
+                    choices=["bestpicture", "bestdirector", "bestacting"])
 
 parser.add_argument("--show_log", "-sl",
                     type=bool,
                     help="Choose whether to show logs",
-                    default=True)                                   
+                    action='store_true')                                   
 
 parser.add_argument("--tokenizer_name", "-tn",
                     type=str,
@@ -78,7 +48,7 @@ parser.add_argument("--model_name", "-mn",
 parser.add_argument("--prediction", "-pr",
                     type=bool,
                     help="If False then use hidden state (tensor with more dims) to get embeddings",
-                    default=True)
+                    action='store_true')
 
 args = parser.parse_args()                    
 
@@ -93,11 +63,17 @@ class EmbedMaker():
         self.log = logger.get_logger(__name__)
 
         self.current_path = os.path.join(os.getcwd(), 'src')
-        self.review_folder = args.review_folder
+        self.review_folder = os.path.join(os.getcwd(), 'data/reviews', args.category)
+
+        self.embeddings_folder = os.path.join(os.getcwd(), f'embeddings/{args.category}')
+        os.makedirs(self.embeddings_folder, exist_ok=True)
+
+        self.save_path = os.path.join(self.embeddings_folder, 'full_data_dict.pkl')
         self.rt_dict_path = os.path.join(self.review_folder, 'full_rt_dict.pkl')
         self.mc_dict_path = os.path.join(self.review_folder, 'full_mc_dict.pkl')
-        self.df = pd.read_csv(args.csv_path)
+        self.df_path = os.path.join(os.getcwd(), 'data/dataframes', f'oscardata_{args.category}.csv')
 
+        self.df = pd.read_csv(self.df_path)
         self.device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
         self.tokenizer = DistilBertTokenizer.from_pretrained(args.tokenizer_name)
         self.model = DistilBertForSequenceClassification.from_pretrained(args.model_name)
@@ -227,18 +203,30 @@ class EmbedMaker():
         # Get embeddings
         data = self.get_embeddings(data, prediction=args.prediction)
         # Save embedings
-        with open(args.save_path, 'wb') as file:
+        with open(self.save_path, 'wb') as file:
             pickle.dump(data, file)
 
+        # Check config keys
+        create_config_dict(self.config, keys=["EMBEDDINGS", "RAW_TEXT_REVIEWS", "CSV_FILE"])
         # Save paths to config.ini
-        self.config["EMBEDDINGS"] = {'path':args.save_path}
-        self.config["RAW_TEXT_REVIEW"] = {'rt_dict':self.rt_dict_path, 'mc_dict':self.mc_dict_path}
+        self.config["EMBEDDINGS"][f'{args.category}'] = self.save_path
+        self.config["RAW_TEXT_REVIEWS"][f'{args.category}_rt_dict'] = self.rt_dict_path, 
+        self.config["RAW_TEXT_REVIEWS"][f'{args.category}_mc_dict'] = self.mc_dict_path
+        self.config["CSV_FILE"][f'{args.category}'] = self.df_path
 
         with open(os.path.join(self.current_path, "config.ini"), 'w') as configfile:
             self.config.write(configfile)
 
-        self.log.info(f'Texts were preprocessed successful and embeds are saved at {args.save_path}')
+        self.log.info(f'Texts were preprocessed successful and embeds are saved at {self.review_folder}')
 
 if __name__ == "__main__":
     embed_maker = EmbedMaker()
-    embed_maker.preprocess_and_save()
+    # embed_maker.preprocess_and_save()
+    # Save paths to config.ini
+    embed_maker.config["EMBEDDINGS"] = {f'{args.category}':embed_maker.save_path}
+    embed_maker.config["RAW_TEXT_REVIEWS"] = {f'{args.category}_rt_dict':embed_maker.rt_dict_path, f'{args.category}_mc_dict':embed_maker.mc_dict_path}
+    embed_maker.config["CSV_FILE"] = {f'{args.category}':embed_maker.df_path}
+
+    with open(os.path.join(embed_maker.current_path, "config.ini"), 'w') as configfile:
+        embed_maker.config.write(configfile)
+
