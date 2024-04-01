@@ -34,6 +34,10 @@ This function will print the best parameters but you also could specify to load 
 
 ## Advanced
 
-At this level you should check your data cause it is one of the main part for ml learning you should check your data. Use the following to get TSNE graph and k-means with silhouette score 
+Besides model settings, it is also important to check your data so before the second stage from the begginer level check data distribution with TSNE and preferable cluster number with the following command (Use python src/data_analysis.py --help to get parameters description)
 
-#### 
+#### - python src/data_analysis.py -us True -cat bestpicture -tn 60 
+
+## You also can get reviews for your movies, just check notebooks/Project_add_more_data.ipynb https://github.com/stpic270/Oscar_Prediction_Project/blob/main/notebooks/Project_add_more_data.ipynb
+
+
