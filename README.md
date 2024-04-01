@@ -1,4 +1,4 @@
-# Oscar_Prediction_Project
+# Oscar-Prediction-Project-and-review-embeddings
 This project offers you to train models to predict oscar winners using additional text emeddings in the following categories: Best Picture, Best Director, Best Actor, Best Actress, Best Supporting Actor, Best Supporting Actress
 
 This project has 3 models: SVM, random forest and logistic regression. It laso contains 3 dataframes that have data and oscar winner labels for actors, director and picture movies. You could train your model with the following guide
