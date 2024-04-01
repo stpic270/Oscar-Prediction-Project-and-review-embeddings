@@ -40,7 +40,7 @@ Besides model settings, it is also important to check your data so before the se
 
 ## You also can get reviews for your movies, just check notebooks/Project_add_more_data.ipynb 
 
-## So, try improve models prediction ability for the Best Picture category or try this repo to get results for the 2 other datasets oscardata_acting.csv and data/dataframes/oscardata_bestdirector.csv
+## So, try improve models prediction ability for the Best Picture category or try this repo to get results for the 2 other datasets oscardata_acting.csv and oscardata_bestdirector.csv
 
 # Coming soon
 
@@ -51,5 +51,5 @@ Besides model settings, it is also important to check your data so before the se
 
 # References
 
-The author of this repo was inspired by this repo https://github.com/MateVaradi/OscarPrediction. Datasets were also from mentioned repo 
+The author of this repo was inspired by this repo https://github.com/MateVaradi/OscarPrediction. Datasets were also extracted from mentioned repo 
 
