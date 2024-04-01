@@ -38,4 +38,4 @@ Besides model settings, it is also important to check your data so before the se
 
 #### - python src/data_analysis.py -us True -cat bestpicture -tn 60 
 
-## You also can get reviews for your movies, just check notebooks/Project_add_more_data.ipynb 
+## You also can get reviews for your movies, just check notebooks/Project_add_more_data.ipy
