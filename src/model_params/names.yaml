@@ -1,0 +1,7 @@
+names:
+  class_names:
+  - non oscar winners
+  - oscar winners
+  model_names:
+  - log_reg
+  - rf

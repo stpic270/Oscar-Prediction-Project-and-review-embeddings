@@ -5,13 +5,13 @@ import numpy as np
 # To get text embeddings with DistilBert
 import torch
 from torch import nn
-import torch.nn.functional as F
-import torch.optim as optim
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
-
-import os # to manipulate paths to files
-import pickle # to upload and download files
-import copy # to copy variables
+# To manipulate paths to files
+import os 
+# To upload and download files
+import pickle
+# To copy variables 
+import copy 
 
 # Libraries for parsing
 import argparse
@@ -19,7 +19,7 @@ import configparser
 
 # To log operations
 from logger import Logger
-
+# For creating config
 from utils import create_config_dict
 
 parser = argparse.ArgumentParser(description="Predictor")
@@ -31,7 +31,6 @@ parser.add_argument("--category", "-cat",
                     choices=["bestpicture", "bestdirector", "bestacting"])
 
 parser.add_argument("--show_log", "-sl",
-                    type=bool,
                     help="Choose whether to show logs",
                     action='store_true')                                   
 
@@ -46,7 +45,6 @@ parser.add_argument("--model_name", "-mn",
                     default="distilbert-base-uncased-finetuned-sst-2-english")
 
 parser.add_argument("--prediction", "-pr",
-                    type=bool,
                     help="If False then use hidden state (tensor with more dims) to get embeddings",
                     action='store_true')
 
@@ -54,42 +52,66 @@ args = parser.parse_args()
 
 class EmbedMaker():
 
+    """
+    Class uploads text, calculates embeddings and saves them
+    """
+
     def __init__(self) -> None:
+
         """
         Initialization paths for data and weights for models
         """
+
+        # Initialize logger
         logger = Logger(args.show_log)
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
-
+        # Get paths for text reviews
         self.current_path = os.path.join(os.getcwd(), 'src')
         self.review_folder = os.path.join(os.getcwd(), 'data/reviews', args.category)
-
+        # Create folder for text embedding if needed
         self.embeddings_folder = os.path.join(os.getcwd(), f'embeddings/{args.category}')
         os.makedirs(self.embeddings_folder, exist_ok=True)
-
+        # Initialize save path for embeddings
         self.save_path = os.path.join(self.embeddings_folder, 'full_data_dict.pkl')
         self.rt_dict_path = os.path.join(self.review_folder, 'full_rt_dict.pkl')
         self.mc_dict_path = os.path.join(self.review_folder, 'full_mc_dict.pkl')
         self.df_path = os.path.join(os.getcwd(), 'data/dataframes', f'oscardata_{args.category}.csv')
-
+        # Initialize config path
+        self.config_path = os.path.join(self.current_path, "config.ini")
+        # Upload data, define device, tokenizer and model
         self.df = pd.read_csv(self.df_path)
         self.device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
         self.tokenizer = DistilBertTokenizer.from_pretrained(args.tokenizer_name)
         self.model = DistilBertForSequenceClassification.from_pretrained(args.model_name)
         self.model.to(self.device)
 
-        self.log.info("DataMaker is ready")
+        # Check if the file exists
+        if not os.path.exists(self.config_path):
+            # CREATE THE CONFIG
+            with open(self.config_path, 'w') as file:
+                pass  # Do nothing, just create the empty file
+
+        # Check if it is possible to read config
         try:
             self.config.read('config.ini')
         except UnicodeDecodeError as er:
             self.config.read('config.ini', encoding='latin-1')
+
+        self.log.info("EmbedMaker is ready")
 
     def get_data(self) -> None:
         
         """
         This function applies reviews to the csv dataframe and then extract
         them as nested list for each films 
+
+        Returns:
+        rt_reviews (list): rotten tomatoes reviews. It is nested list that
+        has length equal to the number of films 
+
+        rt_reviews (list): metacritic reviews. It is nested list that
+        has length equal to the number of films 
         """
 
         # Upload reviews as dicts
@@ -114,12 +136,17 @@ class EmbedMaker():
     def get_hidden_state(self, reviews):
         """
         get hidden states
+
+        Returns:
+        hidden_state (torch.tensor): it is torch tensor with the following shape
+        (b,padding (longest), dim (768 for distilbert-base-uncased-finetuned-sst-2-english))
+        for instance: (2,26,768)
         """
         with torch.no_grad():
             # If there is nan instead of reviews thenreturn None
             if type(reviews) == type(np.nan):
                 return None
-
+            # Extract hidden states
             inputs = self.tokenizer(reviews, return_tensors="pt", padding='longest')
             inputs.to(self.device)
             distilbert_output = self.model.distilbert(**inputs)
@@ -131,7 +158,16 @@ class EmbedMaker():
     def get_prediction(self, hidden_state):
         """
         Get prediction if prediction parameter is True in get_embeddings function
+
+        Parameters:
+        hidden_state (torch.tensor): tensor from get_hidden_state function
+
+        Returns:
+        logits (torch.tensor): tensor with the following shape (b, class_number(2 for distilbert-base-uncased-finetuned-sst-2-english))
+        for instanse (2, 2) or tensor([[ 2.2185, -1.9966],
+                                      [-2.3016,  2.4351]], device='cuda:0', grad_fn=<AddmmBackward0>)
         """
+        # Get logits
         with torch.no_grad():
 
             pooled_output = self.model.pre_classifier(hidden_state)  # (bs, dim)
@@ -145,6 +181,13 @@ class EmbedMaker():
 
         """
         This fucntion takes in data parameter that is dict and contains text reviews and add to it embeddings
+
+        Parameters:
+        data (dict): dict contains rt and mc reviews from get_data function
+        prediction (bool): if False then use hidden state (tensor with more dims) to get embeddings
+
+        Returns:
+        data (dict): dict with added text embeddings
         """
 
         # Copy data
@@ -182,7 +225,7 @@ class EmbedMaker():
                 else: hidden_states_list.append(None)
 
                 if i%100==0:
-                    print("Number of iteration - ", i)
+                    print("Number of film - ", i, "out of", len(text_nested_list), "movies")
 
             # Add embeddings to data parameter
             data[key+'_hidden_states'] = hidden_states_list
@@ -194,7 +237,7 @@ class EmbedMaker():
     def preprocess_and_save(self):
 
         """
-        This function retrieves text, preprocesses it and finally saves data
+        This function retrieves text, preprocesses it and finally saves the data
         """
 
         # Retrieve text as nested lists
@@ -210,23 +253,15 @@ class EmbedMaker():
         create_config_dict(self.config, keys=["EMBEDDINGS", "RAW_TEXT_REVIEWS", "CSV_FILE"])
         # Save paths to config.ini
         self.config["EMBEDDINGS"][f'{args.category}'] = self.save_path
-        self.config["RAW_TEXT_REVIEWS"][f'{args.category}_rt_dict'] = self.rt_dict_path, 
+        self.config["RAW_TEXT_REVIEWS"][f'{args.category}_rt_dict'] = self.rt_dict_path
         self.config["RAW_TEXT_REVIEWS"][f'{args.category}_mc_dict'] = self.mc_dict_path
         self.config["CSV_FILE"][f'{args.category}'] = self.df_path
 
-        with open(os.path.join(self.current_path, "config.ini"), 'w') as configfile:
+        with open(self.config_path, 'w') as configfile:
             self.config.write(configfile)
 
         self.log.info(f'Texts were preprocessed successful and embeds are saved at {self.review_folder}')
 
 if __name__ == "__main__":
     embed_maker = EmbedMaker()
-    # embed_maker.preprocess_and_save()
-    # Save paths to config.ini
-    embed_maker.config["EMBEDDINGS"] = {f'{args.category}':embed_maker.save_path}
-    embed_maker.config["RAW_TEXT_REVIEWS"] = {f'{args.category}_rt_dict':embed_maker.rt_dict_path, f'{args.category}_mc_dict':embed_maker.mc_dict_path}
-    embed_maker.config["CSV_FILE"] = {f'{args.category}':embed_maker.df_path}
-
-    with open(os.path.join(embed_maker.current_path, "config.ini"), 'w') as configfile:
-        embed_maker.config.write(configfile)
-
+    embed_maker.preprocess_and_save()

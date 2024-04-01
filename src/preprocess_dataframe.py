@@ -1,19 +1,19 @@
 # For data preprocessing
 import pandas as pd
-import numpy as np
 from imblearn.over_sampling import SMOTE
 from collections import Counter
-
-import os # to manipulate paths to files
-import pickle # to upload and download files
-
+# To manipulate paths to files
+import os 
+# To upload and download files
+import pickle 
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-
+# Import some utils for preprocessing dataframes
 from utils import fill_in_mean_values, add_data_smote, create_config_dict
-
+# Libraries for parsing
 import argparse
 import configparser
+# Logging operations
 from logger import Logger
 
 parser = argparse.ArgumentParser(description="Predictor")
@@ -54,28 +54,32 @@ args = parser.parse_args()
  
 class ScaleData():
 
-    def __init__(self):
+    """
+    This class scaled passed data
+    """
 
+    def __init__(self):
+        # Initialize logger
         self.logger = Logger(args.show_log)
         self.config = configparser.ConfigParser()
         self.log = self.logger.get_logger(__name__) 
-
+        # Read config
         self.current_path = os.path.join(os.getcwd())
         self.config_path = os.path.join(self.current_path, "src", "config.ini")
         self.config.read(self.config_path)
-
+        # Get csv path and embeddings path
         self.csv_path = self.config["CSV_FILE"][args.category]
         self.embedding_path = self.config["EMBEDDINGS"][args.category]
-
+        # Define whether to use embeddings or not
         if args.without_embeddings: self.suffix="without_embeddings"
         else: self.suffix="with_embeddings"
-
+        # Folders path
         self.folder_path = os.path.join(self.current_path, "data", "scaled_dataframes", args.category)
         self.folder_suffix_path = os.path.join(self.folder_path, self.suffix)
-        
+        # Create Folders if needed
         os.makedirs(self.folder_path, exist_ok=True)
         os.makedirs(self.folder_suffix_path, exist_ok=True)
-
+        # Define save paths
         self.smote_train_path = os.path.join(self.folder_suffix_path, "smote_train.pkl")
         self.usual_train_path = os.path.join(self.folder_suffix_path, "usual_train.pkl")
         self.test_path = os.path.join(self.folder_suffix_path, "test.pkl")
@@ -83,6 +87,15 @@ class ScaleData():
         self.log.info("ScaleData is ready")
 
     def get_df_with_embeddings(self):
+        """
+        This function uploads df, then applies embeddings, if there are nan values - fill in
+        with average from column. It is also removes unused columns and extract labels
+        
+        Returns:
+        df (pandas.DataFrame): final preprocessed dataframe
+        y (list): labels for data (win oscar or not)
+        """
+
         # Load csv file
         df_wt_reviews = pd.read_csv(self.csv_path)
         # Load our embeddings
@@ -124,7 +137,13 @@ class ScaleData():
 
 
     def scale_data(self, df, y):
-
+        """
+        This function scales and saves scaled data
+        
+        Parameters:
+        df (pandas.DataFrame): dataframe from get_df_with_embeddings function
+        y(list): labels from get_df_with_embeddings function
+        """
         # Scale data
         df = StandardScaler().fit_transform(df)
         # Get train, test split
@@ -133,7 +152,7 @@ class ScaleData():
 
         usual_tuple_data = (X_train, y_train)
         test_tuple_data = (X_test, y_test)
-
+        # Save data
         with open(self.usual_train_path, 'wb') as file:
                 pickle.dump(usual_tuple_data, file)
         
@@ -142,10 +161,10 @@ class ScaleData():
 
         # Check config keys
         create_config_dict(self.config, keys=["USUAL_DATA", "TEST_DATA", "SMOTE_DATA"])
-
+        # Define paths for config
         self.config["USUAL_DATA"][f"{args.category}_{self.suffix}"] = self.usual_train_path
         self.config["TEST_DATA"][f"{args.category}_{self.suffix}"] = self.test_path
-
+        
         self.log.info("Your data was scaled and saved successful")
 
         if args.use_smote:
@@ -158,7 +177,7 @@ class ScaleData():
             print("After SMOTE embeddings data", art_counter)
 
             smote_tuple_data = (art_X_train, art_y_train)
-
+            # Save SMOTE data
             with open(self.smote_train_path, 'wb') as file:
                 pickle.dump(smote_tuple_data, file)
 
@@ -166,6 +185,7 @@ class ScaleData():
             self.config["SMOTE_DATA"][f"{args.category}_{self.suffix}"] = self.smote_train_path
 
             self.log.info("SMOTE data was created and saved successful")
+            
         with open(self.config_path, 'w') as configfile:
                 self.config.write(configfile)
 

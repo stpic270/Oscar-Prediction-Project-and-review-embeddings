@@ -1,0 +1,23 @@
+log_reg:
+  bestpicture_params:
+    C: 0.005
+    fit_intercept: true
+    intercept_scaling: 0.1
+    max_iter: 100
+    penalty: l2
+    random_state: 101
+    solver: newton-cg
+rf:
+  bestpicture_params:
+    max_depth: null
+    max_features: 10
+    min_samples_leaf: 5
+    min_samples_split: 6
+    n_estimators: 18
+    random_state: 102
+svm:
+  bestpicture_params:
+    C: 0.5
+    gamma: 0.01
+    kernel: rbf
+    random_state: 101

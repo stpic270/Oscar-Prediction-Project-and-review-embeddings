@@ -1,0 +1,129 @@
+grid_search:
+  log_reg:
+    bestpicture_params:
+      C:
+      - 0.003
+      - 0.005
+      fit_intercept:
+      - true
+      - false
+      intercept_scaling:
+      - 0.1
+      - 0.3
+      max_iter:
+      - 100
+      - 150
+      penalty:
+      - l2
+      random_state:
+      - 101
+      - 102
+      solver:
+      - newton-cg
+      - liblinear
+  rf:
+    bestpicture_params:
+      max_depth:
+      - null
+      - 7
+      - 8
+      - 9
+      max_features:
+      - sqrt
+      - 9
+      - 10
+      - 11
+      - null
+      min_samples_leaf:
+      - 4
+      - 5
+      - 6
+      min_samples_split:
+      - 6
+      - 7
+      - 8
+      n_estimators:
+      - 17
+      - 18
+      random_state:
+      - 101
+      - 102
+  svm:
+    bestpicture_params:
+      C:
+      - 0.1
+      - 0.4
+      - 0.5
+      - 0.6
+      - 1
+      gamma:
+      - 0.1
+      - 0.01
+      - 0.001
+      kernel:
+      - rbf
+      - poly
+      - sigmoid
+      random_state:
+      - 101
+      - 102
+
+random_search:
+  log_reg:
+    bestpicture_params:
+      C:
+      - 0.001
+      - 0.01
+      fit_intercept:
+      - true
+      - false
+      intercept_scaling:
+      - 0.01
+      - 0.1
+      max_iter:
+      - 100
+      - 105
+      penalty:
+      - l2
+      random_state:
+      - 101
+      - 102
+      solver:
+      - newton-cg
+      - liblinear
+  rf:
+    bestpicture_params:
+      max_depth:
+      - 5
+      - 10
+      - None
+      max_features:
+      - sqrt
+      - 9
+      - 11
+      min_samples_leaf:
+      - 4
+      - 5
+      - 6
+      min_samples_split:
+      - 0.001
+      - 0.1
+      n_estimators:
+      - 15
+      - 19
+      random_state:
+      - 100
+      - 103
+  svm:
+    bestpicture_params:
+      C:
+      - 0.4
+      - 0.6
+      gamma:
+      - 0.007
+      - 0.02
+      kernel:
+      - rbf
+      random_state:
+      - 101
+      - 105

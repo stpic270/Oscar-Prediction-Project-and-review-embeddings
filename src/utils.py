@@ -18,6 +18,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import PredefinedSplit
 import sklearn
+from scipy.stats import randint, uniform
 
 # For data plotting
 import plotly.express as px
@@ -228,3 +229,38 @@ def plot_and_compare(pairs_list, model_name, models_dict, data_dict):
         plot_model_results(model_1, model_2, model_name.upper(),
                            X_test_1, y_test_1,
                            X_test_2, y_test_2, class_names)
+
+def preprocess_params(params, search_type):
+
+    if search_type=='grid_search':
+
+            for k, v in params.items():
+                if 'None' in v:
+                    v[v.index('None')] = None
+
+    else:
+
+        for k, v in params.items():
+            other_types = []
+            copied_v = copy.deepcopy(v)
+            # Extract strings and currently save them
+            for element in copied_v:
+                if (type(element) == type('string_type') or type(element)== type(False)) and element != 'None':
+                    other_types.append(element)
+                    v.pop(v.index(element))
+
+            # Append correct None
+            if 'None' in v:
+                other_types.append(None)
+                v.pop(v.index('None'))
+
+            # Check if parameters have numbers
+            if len(v) > 0:
+                # Use randint if type is int else use uniform
+                if type(v[0]) == type(1): v = [i for i in range(min(v), max(v) + 1)] + other_types 
+                else: v = uniform(min(v), max(v)) # Usually if type float then it is the single type for the parameter
+            # Else it is string or just None type
+            else: v += other_types
+            params[k] = v
+
+    return params                           
