@@ -18,4 +18,6 @@ plotly==5.15.0
 matplotlib==3.7.1
 seaborn==0.13.1
 
+kaleido==0.2.1
+
 reportlab

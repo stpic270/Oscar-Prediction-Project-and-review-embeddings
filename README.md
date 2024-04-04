@@ -6,13 +6,13 @@ First of all you need to choose usage type (of course you could move from one to
 
 ## Begginer 
 
-1) All types start with preprocessing embeddings (Use src/preprocess_text_embeddings.py --help to get description for each parameter. HINT always preprocess data with random_state (-rs flag)):
+1) All types start with preprocessing embeddings (Use src/preprocess_text_embeddings.py --help to get description for each parameter) 
 
-#### - python src/preprocess_text_embeddings.py -cat bestpicture -rs 43 -pr -sl
+#### - python src/preprocess_text_embeddings.py -cat bestpicture -pr -sl
 
-2) After that you need to choose what data to append to the main dataframe and then scale it (Nothing, SMOTE or text embeddings or both. Use src/preprocess_dataframe.py --help to get description for parameters)
+2) After that you need to choose what data to append to the main dataframe and then scale it (Nothing, SMOTE or text embeddings or both. Use src/preprocess_dataframe.py --help to get description for parameters). HINT always preprocess data with random_state (-rs flag):
 
-#### - python src/preprocess_dataframe.py -cat bestpicture -us -sl
+#### - python src/preprocess_dataframe.py -cat bestpicture -us -rs 43 -sl
 
 3) Finally, you can train train your model (check src/model_params/main_params.yaml and try different model parameters. Use python src/train.py --help to get description for parameters)
 

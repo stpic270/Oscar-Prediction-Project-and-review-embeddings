@@ -240,7 +240,7 @@ if __name__ == "__main__":
     comparer.plot_reports(reports)
     comparer.plot_cms(cms)
 
-    comparer.log.info("PDF with results was create")
+    comparer.log.info("PDFs with results were created")
 
     if args.delete_png:
         comparer.delete_png(name="report", length=len(reports)//2)
