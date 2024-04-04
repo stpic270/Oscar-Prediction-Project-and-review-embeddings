@@ -1,3 +1,9 @@
+# Installation
+
+#### git clone https://github.com/stpic270/Oscar-Prediction-Project-and-review-embeddings.git
+
+#### pip install -r requirements.txt
+
 # Oscar-Prediction-Project-and-review-embeddings
 This project offers you to train models to predict oscar winners using additional text emeddings in the following categories: Best Picture, Best Director, Best Actor, Best Actress, Best Supporting Actor, Best Supporting Actress
 
